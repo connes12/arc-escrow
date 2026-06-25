@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { isAddress, parseUnits } from "viem";
+import { isAddress, parseEventLogs, parseUnits } from "viem";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { USDC_ADDRESS, explorerUrl, usdcAbi } from "@/lib/arcChain";
 import { escrowContractAddress } from "@/lib/config";
@@ -15,6 +15,7 @@ export function CreateEscrow() {
   const [amount, setAmount] = useState("");
   const [approveHash, setApproveHash] = useState<string>();
   const [createHash, setCreateHash] = useState<string>();
+  const [createdEscrowId, setCreatedEscrowId] = useState<string>();
   const [status, setStatus] = useState("Approve USDC, then lock it into escrow.");
   const [busyAction, setBusyAction] = useState<"approve" | "create" | null>(null);
 
@@ -39,6 +40,7 @@ export function CreateEscrow() {
 
     setBusyAction("approve");
     setCreateHash(undefined);
+    setCreatedEscrowId(undefined);
 
     try {
       setStatus("Waiting for USDC approval wallet confirmation...");
@@ -69,6 +71,7 @@ export function CreateEscrow() {
     }
 
     setBusyAction("create");
+    setCreatedEscrowId(undefined);
 
     try {
       setStatus("Waiting for escrow creation wallet confirmation...");
@@ -81,8 +84,20 @@ export function CreateEscrow() {
 
       setCreateHash(hash);
       setStatus("Escrow transaction sent. Waiting for confirmation...");
-      await publicClient.waitForTransactionReceipt({ hash });
-      setStatus("Escrow created successfully.");
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const [createdEvent] = parseEventLogs({
+        abi: ESCROW_ABI,
+        eventName: "EscrowCreated",
+        logs: receipt.logs,
+      });
+
+      if (createdEvent) {
+        const escrowId = createdEvent.args.escrowId?.toString();
+        setCreatedEscrowId(escrowId);
+        setStatus(`Escrow created successfully. Escrow ID: ${escrowId}`);
+      } else {
+        setStatus("Escrow created successfully.");
+      }
     } catch {
       setStatus("Escrow creation failed or was rejected.");
     } finally {
@@ -122,6 +137,11 @@ export function CreateEscrow() {
         <p>
           Escrow tx: <a href={explorerUrl(createHash)} target="_blank" rel="noreferrer">{createHash}</a>
         </p>
+      ) : null}
+      {createdEscrowId ? (
+        <div style={successBoxStyle}>
+          <strong>Escrow ID:</strong> {createdEscrowId}
+        </div>
       ) : null}
     </section>
   );
@@ -165,4 +185,13 @@ const buttonStyle = {
   background: "#4f7cff",
   color: "white",
   cursor: "pointer",
+} satisfies React.CSSProperties;
+
+const successBoxStyle = {
+  marginTop: 12,
+  padding: "12px 16px",
+  borderRadius: 12,
+  border: "1px solid #22c55e",
+  background: "rgba(34, 197, 94, 0.12)",
+  color: "#dcfce7",
 } satisfies React.CSSProperties;
