@@ -1,4 +1,4 @@
-export const ESCROW_ABI = [
+export const PRODUCT_ESCROW_ABI = [
   {
     type: "event",
     name: "EscrowCreated",
@@ -10,12 +10,41 @@ export const ESCROW_ABI = [
     ],
   },
   {
+    type: "event",
+    name: "ProductEscrowCreated",
+    inputs: [
+      { name: "escrowId", type: "uint256", indexed: true },
+      { name: "ipfsCID", type: "string", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "ProductNFTMinted",
+    inputs: [
+      { name: "escrowId", type: "uint256", indexed: true },
+      { name: "buyer", type: "address", indexed: true },
+      { name: "tokenId", type: "uint256", indexed: false },
+      { name: "ipfsCID", type: "string", indexed: false },
+    ],
+  },
+  {
     type: "function",
     name: "createEscrow",
     stateMutability: "nonpayable",
     inputs: [
       { name: "seller", type: "address" },
       { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "escrowId", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "createProductEscrow",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "seller", type: "address" },
+      { name: "amount", type: "uint256" },
+      { name: "ipfsCID", type: "string" },
     ],
     outputs: [{ name: "escrowId", type: "uint256" }],
   },
@@ -35,20 +64,12 @@ export const ESCROW_ABI = [
   },
   {
     type: "function",
-    name: "getEscrow",
+    name: "productEscrows",
     stateMutability: "view",
     inputs: [{ name: "escrowId", type: "uint256" }],
     outputs: [
-      {
-        name: "",
-        type: "tuple",
-        components: [
-          { name: "buyer", type: "address" },
-          { name: "seller", type: "address" },
-          { name: "amount", type: "uint256" },
-          { name: "status", type: "uint8" }
-        ]
-      }
-    ]
+      { name: "ipfsCID", type: "string" },
+      { name: "nftMinted", type: "bool" },
+    ],
   },
 ] as const;

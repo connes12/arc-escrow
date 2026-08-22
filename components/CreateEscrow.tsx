@@ -8,7 +8,7 @@ import { escrowContractAddress } from "@/lib/config";
 import { ESCROW_ABI } from "@/lib/escrowAbi";
 
 export function CreateEscrow() {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
   const [seller, setSeller] = useState("");
@@ -16,7 +16,7 @@ export function CreateEscrow() {
   const [approveHash, setApproveHash] = useState<string>();
   const [createHash, setCreateHash] = useState<string>();
   const [createdEscrowId, setCreatedEscrowId] = useState<string>();
-  const [status, setStatus] = useState("Approve USDC, then lock it into escrow.");
+  const [status, setStatus] = useState<React.ReactNode>("Approve USDC, then lock it into escrow.");
   const [busyAction, setBusyAction] = useState<"approve" | "create" | null>(null);
 
   const parsedAmount = useMemo(() => {
@@ -54,9 +54,22 @@ export function CreateEscrow() {
       setApproveHash(hash);
       setStatus("Approval sent. Waiting for confirmation...");
       await publicClient.waitForTransactionReceipt({ hash });
-      setStatus("Approval confirmed. You can now lock USDC into escrow.");
-    } catch {
-      setStatus("Approval failed or was rejected.");
+      setStatus(
+        <span>
+          ✅ Transaction successful —{" "}
+          <a
+            href={explorerUrl(hash)}
+            target="_blank"
+            rel="noreferrer"
+            style={{ textDecoration: "underline", color: "#60a5fa" }}
+          >
+            view on Arcscan
+          </a>
+        </span>
+      );
+    } catch (error) {
+      const reason = error instanceof Error ? (error as any).shortMessage || error.message : String(error);
+      setStatus(`❌ Transaction failed: ${reason}`);
     } finally {
       setBusyAction(null);
     }
@@ -94,12 +107,59 @@ export function CreateEscrow() {
       if (createdEvent) {
         const escrowId = createdEvent.args.escrowId?.toString();
         setCreatedEscrowId(escrowId);
-        setStatus(`Escrow created successfully. Escrow ID: ${escrowId}`);
+
+        if (escrowId && address && typeof window !== "undefined") {
+          try {
+            const storageKey = `myEscrowIds_${address.toLowerCase()}`;
+            const stored = localStorage.getItem(storageKey);
+            let savedIds: string[] = [];
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (Array.isArray(parsed)) {
+                savedIds = parsed;
+              }
+            }
+            if (!savedIds.includes(escrowId)) {
+              savedIds.push(escrowId);
+              localStorage.setItem(storageKey, JSON.stringify(savedIds));
+            }
+          } catch (e) {
+            console.error("Failed to save escrowId to localStorage", e);
+          }
+        }
+
+        setStatus(
+          <span>
+            ✅ Transaction successful —{" "}
+            <a
+              href={explorerUrl(hash)}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline", color: "#60a5fa" }}
+            >
+              view on Arcscan
+            </a>{" "}
+            (Escrow ID: {escrowId})
+          </span>
+        );
       } else {
-        setStatus("Escrow created successfully.");
+        setStatus(
+          <span>
+            ✅ Transaction successful —{" "}
+            <a
+              href={explorerUrl(hash)}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline", color: "#60a5fa" }}
+            >
+              view on Arcscan
+            </a>
+          </span>
+        );
       }
-    } catch {
-      setStatus("Escrow creation failed or was rejected.");
+    } catch (error) {
+      const reason = error instanceof Error ? (error as any).shortMessage || error.message : String(error);
+      setStatus(`❌ Transaction failed: ${reason}`);
     } finally {
       setBusyAction(null);
     }
@@ -126,7 +186,11 @@ export function CreateEscrow() {
           </button>
         </div>
       </form>
-      {!escrowContractAddress ? <p>Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `.env.local`.</p> : null}
+      {!escrowContractAddress ? (
+        <p>
+          Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `.env.local`.
+        </p>
+      ) : null}
       <p>{status}</p>
       {approveHash ? (
         <p>

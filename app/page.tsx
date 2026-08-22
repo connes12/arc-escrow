@@ -1,10 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import { CreateEscrow } from "@/components/CreateEscrow";
 import { NetworkCheck } from "@/components/NetworkCheck";
 import { ReleaseEscrow } from "@/components/ReleaseEscrow";
 import { UsdcBalance } from "@/components/UsdcBalance";
 import { WalletConnect } from "@/components/WalletConnect";
+import { MyEscrows } from "@/components/MyEscrows";
 
 export default function HomePage() {
+  const [escrowIdToRelease, setEscrowIdToRelease] = useState("");
+
   return (
     <main style={{ maxWidth: 960, margin: "0 auto", padding: 24 }}>
       <div style={{ display: "grid", gap: 20 }}>
@@ -19,7 +25,8 @@ export default function HomePage() {
         <NetworkCheck />
         <UsdcBalance />
         <CreateEscrow />
-        <ReleaseEscrow />
+        <ReleaseEscrow escrowId={escrowIdToRelease} setEscrowId={setEscrowIdToRelease} />
+        <MyEscrows onSelectEscrowId={setEscrowIdToRelease} />
       </div>
     </main>
   );

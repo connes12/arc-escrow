@@ -6,11 +6,15 @@ import { explorerUrl } from "@/lib/arcChain";
 import { escrowContractAddress } from "@/lib/config";
 import { ESCROW_ABI } from "@/lib/escrowAbi";
 
-export function ReleaseEscrow() {
+interface ReleaseEscrowProps {
+  escrowId: string;
+  setEscrowId: (id: string) => void;
+}
+
+export function ReleaseEscrow({ escrowId, setEscrowId }: ReleaseEscrowProps) {
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
-  const [escrowId, setEscrowId] = useState("");
-  const [status, setStatus] = useState("Release a funded escrow as the buyer.");
+  const [status, setStatus] = useState<React.ReactNode>("Release a funded escrow as the buyer.");
   const [txHash, setTxHash] = useState<string>();
   const [busy, setBusy] = useState(false);
 
@@ -36,9 +40,22 @@ export function ReleaseEscrow() {
       setTxHash(hash);
       setStatus("Release transaction sent. Waiting for confirmation...");
       await publicClient.waitForTransactionReceipt({ hash });
-      setStatus("Escrow released successfully.");
-    } catch {
-      setStatus("Release failed or was rejected.");
+      setStatus(
+        <span>
+          ✅ Transaction successful —{" "}
+          <a
+            href={explorerUrl(hash)}
+            target="_blank"
+            rel="noreferrer"
+            style={{ textDecoration: "underline", color: "#60a5fa" }}
+          >
+            view on Arcscan
+          </a>
+        </span>
+      );
+    } catch (error) {
+      const reason = error instanceof Error ? (error as any).shortMessage || error.message : String(error);
+      setStatus(`❌ Transaction failed: ${reason}`);
     } finally {
       setBusy(false);
     }
