@@ -28,17 +28,22 @@ export function UsdcBalance() {
 
   return (
     <section style={cardStyle}>
-      <h2>USDC Balances</h2>
+      <h2 style={headingStyle}>USDC Balances</h2>
       {!showBalances ? (
-        <p>Connect your wallet to view balances.</p>
+        <p style={textStyle}>Connect your wallet to view balances.</p>
       ) : (
-        <div style={{ display: "grid", gap: 8 }}>
-          <p>
-            Native gas USDC (18 decimals): {nativeFormatted}{" "}
-            {gasBalance.data?.symbol ?? "USDC"}
+        <div style={{ display: "grid", gap: 10 }}>
+          <p style={textStyle}>
+            Native gas USDC (18 decimals):{" "}
+            <strong style={{ color: "#123C2D" }}>
+              {nativeFormatted} {gasBalance.data?.symbol ?? "USDC"}
+            </strong>
           </p>
-          <p>
-            ERC-20 USDC (6 decimals): {tokenBalance.data ? formatUnits(tokenBalance.data, 6) : "0"} USDC
+          <p style={textStyle}>
+            ERC-20 USDC (6 decimals):{" "}
+            <strong style={{ color: "#123C2D" }}>
+              {tokenBalance.data ? formatUnits(tokenBalance.data, 6) : "0"} USDC
+            </strong>
           </p>
         </div>
       )}
@@ -47,8 +52,23 @@ export function UsdcBalance() {
 }
 
 const cardStyle = {
-  background: "#131a2d",
-  border: "1px solid #26314e",
+  background: "#ffffff",
+  border: "1px solid #DCE8DF",
   borderRadius: 16,
   padding: 20,
+  transition: "all 0.2s ease-in-out",
+} satisfies React.CSSProperties;
+
+const headingStyle = {
+  color: "#123C2D",
+  fontSize: 22,
+  fontWeight: 600,
+  marginBottom: 16,
+} satisfies React.CSSProperties;
+
+const textStyle = {
+  color: "#18201C",
+  fontSize: 15,
+  margin: 0,
+  lineHeight: 1.5,
 } satisfies React.CSSProperties;
